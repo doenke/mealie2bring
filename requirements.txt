@@ -1,0 +1,6 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+apscheduler==3.10.4
+bring-api==0.5.4
+aiohttp==3.10.5
+pydantic==2.9.2
