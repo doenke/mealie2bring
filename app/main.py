@@ -22,11 +22,19 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 async def dashboard(request: Request):
     settings = get_settings()
     entries = load_log_entries(settings)
-    logo_html = ""
+    custom_logo_html = ""
     if settings.dashboard_logo_url:
-        logo_html = (
-            f'<img src="{settings.dashboard_logo_url}" alt="Logo" class="logo" />'
+        custom_logo_html = (
+            f'<div class="logo logo--custom"><img src="{settings.dashboard_logo_url}" alt="Logo" /></div>'
         )
+    logo_html = (
+        '<div class="logo-stack">'
+        '<div class="logo logo--generated">'
+        '<img src="/static/logo-combo.svg" alt="Mealie + Bring Logo" />'
+        "</div>"
+        f"{custom_logo_html}"
+        "</div>"
+    )
     rows = []
     for entry in entries:
         if entry.get("type") != "item":
