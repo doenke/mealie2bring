@@ -213,7 +213,7 @@ async def _mealie_mark_done(settings: Settings, item: Dict[str, Any]) -> bool:
             return response.status == 200
 
 
-def _extract_item_details(item: Dict[str, Any]) -> Tuple[Optional[str], str, Optional[str]]:
+def _extract_item_details(item: Dict[str, Any]) -> Tuple[Optional[str], str, Optional[str], str, Optional[str]]:
     item_id = item.get("id")
     name = None
     food = item.get("food") or {}
@@ -221,13 +221,14 @@ def _extract_item_details(item: Dict[str, Any]) -> Tuple[Optional[str], str, Opt
         name = food.get("name")
     if not name:
         name = item.get("note")
-    quantity = item.get("quantity")
+    quantity_value = item.get("quantity")
+    quantity = _format_quantity(quantity_value)
     unit = None
     unit_data = item.get("unit") or {}
     if isinstance(unit_data, dict):
         unit = unit_data.get("name")
-    note = _build_note(quantity, unit)
-    return name, note, item_id
+    note = _build_note(quantity_value, unit)
+    return name, note, item_id, quantity, unit
 
 
 async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any]]:
@@ -257,11 +258,13 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
         results: List[Dict[str, Any]] = []
         for item in items:
             if item.get("checked"):
-                name, note, item_id = _extract_item_details(item)
+                name, note, item_id, quantity, unit = _extract_item_details(item)
                 payload = {
                     "status": "skipped",
                     "name": name or "(unbekannt)",
                     "note": note,
+                    "quantity": quantity,
+                    "unit": unit,
                     "mealie": "done",
                     "itemId": item_id,
                 }
@@ -269,7 +272,7 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
                 results.append(payload)
                 continue
 
-            name, note, item_id = _extract_item_details(item)
+            name, note, item_id, quantity, unit = _extract_item_details(item)
             if not name:
                 _log_event(settings, "WARN", "Item ohne Namen übersprungen", {"itemId": item_id})
                 continue
@@ -310,6 +313,8 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
                 "status": status,
                 "name": name,
                 "note": note,
+                "quantity": quantity,
+                "unit": unit,
                 "mealie": mealie_state,
                 "itemId": item_id,
             }
