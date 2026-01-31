@@ -4,10 +4,10 @@ services:
     container_name: mealie2bring
     command: >
       uvicorn app.main:app
-      --host 0.0.0.0 --port 1235
+      --host 0.0.0.0 --port ${PORT:-1235}
       --proxy-headers --forwarded-allow-ips="*"
     ports:
-      - "1235:1235"
+      - "${PORT:-1235}:${PORT:-1235}"
     environment:
       MEALIE_BASE_URL: "https://mealie.example.com"
       MEALIE_API_TOKEN: "your-mealie-token"
@@ -18,13 +18,13 @@ services:
       SYNC_INTERVAL_MINUTES: "3"
       LOG_RETENTION_DAYS: "30"
       LOG_PATH: "/data/mealie_bring_sync.log"
-      PORT: "1235"
+      PORT: "${PORT:-1235}"
       DASHBOARD_LOGO_URL: ""
     volumes:
       - mealie2bring-data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:1235/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:${PORT:-1235}/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
