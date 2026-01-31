@@ -1,0 +1,16 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4" y="4" width="152" height="152" rx="32" fill="#0F131A" stroke="#253044" stroke-width="8"/>
+  <g filter="url(#shadow)">
+    <rect x="22" y="52" width="46" height="46" rx="12" fill="#0F2A1E" stroke="#84E176" stroke-width="2"/>
+    <rect x="92" y="52" width="46" height="46" rx="12" fill="#2A1410" stroke="#FF8361" stroke-width="2"/>
+  </g>
+  <text x="45" y="82" text-anchor="middle" font-family="Inter, Segoe UI, sans-serif" font-size="20" font-weight="700" fill="#84E176">M</text>
+  <text x="115" y="82" text-anchor="middle" font-family="Inter, Segoe UI, sans-serif" font-size="20" font-weight="700" fill="#FF8361">B</text>
+  <path d="M73 80H87" stroke="#F4F5F7" stroke-width="3" stroke-linecap="round"/>
+  <path d="M82 74L88 80L82 86" stroke="#F4F5F7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <filter id="shadow" x="16" y="48" width="128" height="56" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+</svg>
