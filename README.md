@@ -17,7 +17,7 @@ It preserves the quantities and units properly during the transfer to Bring.
 
 ## Quickstart (Docker Compose)
 
-This compose is just a quickie... Find a full example in the repo:  [`compose.yaml`](./compose.yaml)
+This compose is just a quickie... Find a full example in the repo:  [`docker-compose.yml`](./docker-compose.yml)
 
 ```yaml
 services:
