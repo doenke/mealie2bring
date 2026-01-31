@@ -32,10 +32,29 @@ def _format_timestamp(value: str) -> str:
     return localized.strftime("%d.%m.%Y %H:%M")
 
 
+def _format_clock(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    localized = parsed.astimezone()
+    return localized.strftime("%H:%M")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     settings = get_settings()
     entries = load_log_entries(settings)
+    last_sync_time = ""
+    for entry in entries:
+        if entry.get("type") == "event" and entry.get("message") == "Sync gestartet":
+            last_sync_time = _format_clock(entry.get("timestamp", ""))
+            break
+    page_time = datetime.now(timezone.utc).astimezone().strftime("%H:%M")
     logo_html = ""
     if settings.dashboard_logo_url:
         logo_html = (
@@ -73,7 +92,7 @@ async def dashboard(request: Request):
               <div>
               <p class="eyebrow">mealie2bring</p>
               <h1>Mealie → Bring</h1>
-              <p class="subtitle">Letzter Abruf alle {settings.sync_interval_minutes} Minuten</p>
+              <p class="subtitle">Abruf alle {settings.sync_interval_minutes} Minuten. Letzter Abruf um {last_sync_time or "—"} Uhr. Seite um {page_time} Uhr erzeugt.</p>
               </div>
             </div>
             <div class="actions">
