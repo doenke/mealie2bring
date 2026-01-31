@@ -9,10 +9,11 @@ It preserves the quantities and units properly during the transfer to Bring.
 ## Features
 
 - Fully configurable via environment variables
+- Retains units and quantities
 - Automatic sync on a configurable interval (default: 3 minutes)
 - Log output in the console and in the web UI (max. 30 days)
 - Manual trigger via button and via web service
-- Docker & Docker Compose setup on port 1235 (configurable via `PORT`)
+
 
 ## Quickstart (Docker Compose)
 
