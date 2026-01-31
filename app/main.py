@@ -20,20 +20,32 @@ static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
+def _pick_supported_locale(value: str, settings: Settings) -> str | None:
+    if not value:
+        return None
+    normalized = value.strip().lower().replace("_", "-")
+    if normalized in settings.date_formats:
+        return normalized
+    base = normalized.split("-")[0]
+    if base in settings.date_formats:
+        return base
+    return None
+
+
 def _resolve_locale(request: Request, settings: Settings) -> str:
+    if settings.ui_locale:
+        resolved = _pick_supported_locale(settings.ui_locale, settings)
+        if resolved:
+            return resolved
     header = request.headers.get("accept-language", "")
     for part in header.split(","):
-        lang = part.split(";")[0].strip().lower()
-        if not lang:
-            continue
-        normalized = lang.replace("_", "-")
-        if normalized in settings.date_formats:
-            return normalized
-        base = normalized.split("-")[0]
-        if base in settings.date_formats:
-            return base
-    if settings.default_locale in settings.date_formats:
-        return settings.default_locale
+        lang = part.split(";")[0]
+        resolved = _pick_supported_locale(lang, settings)
+        if resolved:
+            return resolved
+    resolved_default = _pick_supported_locale(settings.default_locale, settings)
+    if resolved_default:
+        return resolved_default
     return next(iter(settings.date_formats), "de")
 
 
@@ -70,7 +82,7 @@ def _translate_event(entry: dict, locale: str, settings: Settings) -> None:
         message_key,
         entry.get("context", {}),
         locale=locale,
-        fallback_locale=settings.default_locale,
+        fallback_locale=settings.fallback_locale,
     )
 
 
@@ -78,6 +90,15 @@ def _translate_event(entry: dict, locale: str, settings: Settings) -> None:
 async def dashboard(request: Request):
     settings = get_settings()
     locale = _resolve_locale(request, settings)
+
+    def t(message_key: str, context: dict | None = None) -> str:
+        return translate(
+            message_key,
+            context or {},
+            locale=locale,
+            fallback_locale=settings.fallback_locale,
+        )
+
     entries = load_log_entries(settings)
     for entry in entries:
         _translate_event(entry, locale, settings)
@@ -92,7 +113,7 @@ async def dashboard(request: Request):
     last_sync_display = (
         _format_timestamp(last_sync_entry.get("timestamp", ""), settings, locale)
         if last_sync_entry
-        else "Noch kein Lauf"
+        else t("dashboard.last_run.none")
     )
     page_generated = _format_now(settings, locale)
     custom_logo_html = ""
@@ -110,14 +131,14 @@ async def dashboard(request: Request):
     actions_row_html = (
         '<div class="actions-row">'
         f"{custom_logo_html}"
-        '<button type="button" id="manual-trigger">Manuell starten</button>'
+        f'<button type="button" id="manual-trigger">{t("dashboard.manual_trigger")}</button>'
         "</div>"
     )
     status_labels = {
-        "ok": "übernommen",
+        "ok": t("dashboard.status.ok"),
     }
     mealie_labels = {
-        "done": "erledigt",
+        "done": t("dashboard.mealie.done"),
     }
     rows = []
     for entry in entries:
@@ -140,9 +161,9 @@ async def dashboard(request: Request):
         )
 
     sync_label = (
-        "Automatischer Abruf deaktiviert"
+        t("dashboard.subtitle.sync_disabled")
         if settings.sync_interval_minutes <= 0
-        else f"Abruf alle {settings.sync_interval_minutes} Minuten"
+        else t("dashboard.subtitle.sync_interval", {"minutes": settings.sync_interval_minutes})
     )
     html = f"""
     <!DOCTYPE html>
@@ -150,7 +171,7 @@ async def dashboard(request: Request):
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Mealie → Bring</title>
+        <title>{t("dashboard.title")}</title>
         <link rel="stylesheet" href="/static/style.css" />
         <link rel="icon" type="image/png" href="/static/Mealie2Bring.png" />
       </head>
@@ -161,11 +182,11 @@ async def dashboard(request: Request):
               {logo_html}
               <div>
               <p class="eyebrow">mealie2bring</p>
-              <h1>Mealie → Bring</h1>
+              <h1>{t("dashboard.title")}</h1>
               <p class="subtitle">{sync_label}</p>
               <div class="status-meta">
-                <p class="meta-line">Letzter Lauf: {last_sync_display}</p>
-                <p class="meta-line">Seite erstellt: {page_generated}</p>
+                <p class="meta-line">{t("dashboard.last_run")}: {last_sync_display}</p>
+                <p class="meta-line">{t("dashboard.page_generated")}: {page_generated}</p>
               </div>
               </div>
             </div>
@@ -177,23 +198,23 @@ async def dashboard(request: Request):
 
           <section class="panel">
             <div class="panel-header">
-              <h2>Log</h2>
-              <p>Letzte 30 Tage (max).</p>
+              <h2>{t("dashboard.log_title")}</h2>
+              <p>{t("dashboard.log_subtitle")}</p>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th>Zeit</th>
-                    <th>Artikel</th>
-                    <th>Menge</th>
-                    <th>Einheit</th>
-                    <th>Bring</th>
-                    <th>Mealie</th>
+                    <th>{t("dashboard.table.time")}</th>
+                    <th>{t("dashboard.table.item")}</th>
+                    <th>{t("dashboard.table.quantity")}</th>
+                    <th>{t("dashboard.table.unit")}</th>
+                    <th>{t("dashboard.table.bring")}</th>
+                    <th>{t("dashboard.table.mealie")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {''.join(rows) if rows else '<tr><td colspan="6">Noch keine Einträge</td></tr>'}
+                  {''.join(rows) if rows else f'<tr><td colspan="6">{t("dashboard.table.empty")}</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -201,12 +222,17 @@ async def dashboard(request: Request):
         </main>
         <footer class="page-footer">
           <small>
-            Ein Projekt von <a href="mailto:soenke@soenkejacobs.de">Sönke Jacobs</a>
-            · <a href="https://github.com/doenke/mealie2bring">GitHub</a>
+            {t("dashboard.footer.project_by")} <a href="mailto:soenke@soenkejacobs.de">Sönke Jacobs</a>
+            · <a href="https://github.com/doenke/mealie2bring">{t("dashboard.footer.github")}</a>
           </small>
         </footer>
       </body>
       <script>
+        const translations = {{
+          noticeStarting: "{t('dashboard.notice.starting')}",
+          noticeStarted: "{t('dashboard.notice.started')}",
+          noticeFailed: "{t('dashboard.notice.failed')}",
+        }};
         const triggerButton = document.getElementById("manual-trigger");
         const notice = document.getElementById("trigger-notice");
 
@@ -220,16 +246,16 @@ async def dashboard(request: Request):
 
         triggerButton.addEventListener("click", async () => {{
           triggerButton.disabled = true;
-          showNotice("Manueller Sync wird gestartet …");
+          showNotice(translations.noticeStarting);
           try {{
             const response = await fetch("/trigger", {{"method": "POST"}});
             if (!response.ok) {{
               throw new Error("request failed");
             }}
             await response.json();
-            showNotice("Sync angestoßen. Ergebnisse folgen im Log.", "is-success");
+            showNotice(translations.noticeStarted, "is-success");
           }} catch (error) {{
-            showNotice("Sync konnte nicht gestartet werden. Bitte erneut versuchen.", "is-error");
+            showNotice(translations.noticeFailed, "is-error");
           }} finally {{
             triggerButton.disabled = false;
           }}
