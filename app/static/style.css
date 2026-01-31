@@ -180,7 +180,8 @@ th {
   color: #8f9bb0;
 }
 
-.ok {
+.ok,
+.done {
   color: #70e000;
   font-weight: 600;
 }
