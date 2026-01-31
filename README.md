@@ -35,8 +35,6 @@ services:
       MEALIE_SHOPPING_LIST_ID: "your-shopping-list-id"
       BRING_EMAIL: "you@example.com"
       BRING_PASSWORD: "your-bring-password"
-      LOG_PATH: "/data/mealie_bring_sync.log"
-      PORT: "${PORT:-1235}"
     restart: unless-stopped
 
 ```
