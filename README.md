@@ -68,4 +68,3 @@ The UI is then available at `http://localhost:1235` (or `http://localhost:$PORT`
 ## Notes
 
 - The log can persist across restarts when `/data` is mounted.
-- Only the last 30 days of entries are kept.
