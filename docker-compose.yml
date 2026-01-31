@@ -1,6 +1,6 @@
 services:
   mealie2bring:
-    build: .
+    build: https://github.com/doenke/mealie2bring.git#main
     container_name: mealie2bring
     ports:
       - "1235:1235"
