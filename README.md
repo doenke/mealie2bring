@@ -1,8 +1,8 @@
 # mealie2bring
 
 Syncs open items from a Mealie shopping list to Bring! and checks them off in Mealie. The web UI shows the log and provides a manual trigger.
-Mealie ist ein Open-Source-Rezept- und Küchenmanager, der Einkaufslisten aus Rezepten erzeugt und verwaltet: https://github.com/mealie-recipes/mealie
-Bring! ist eine Einkaufslisten-App, mit der sich geteilte Listen verwalten und abhaken lassen: https://www.getbring.com/
+- Mealie ist ein Open-Source-Rezept- und Küchenmanager, der Einkaufslisten aus Rezepten erzeugt und verwaltet: https://github.com/mealie-recipes/mealie
+- Bring! ist eine Einkaufslisten-App, mit der sich geteilte Listen verwalten und abhaken lassen: https://www.getbring.com/
 
 ## Features
 
