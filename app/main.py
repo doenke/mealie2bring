@@ -32,10 +32,26 @@ def _format_timestamp(value: str) -> str:
     return localized.strftime("%d.%m.%Y %H:%M")
 
 
+def _format_now() -> str:
+    return _format_timestamp(datetime.now(timezone.utc).isoformat())
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     settings = get_settings()
     entries = load_log_entries(settings)
+    last_sync_entry = next(
+        (
+            entry
+            for entry in entries
+            if entry.get("type") == "event" and entry.get("message") == "Sync gestartet"
+        ),
+        None,
+    )
+    last_sync_display = (
+        _format_timestamp(last_sync_entry.get("timestamp", "")) if last_sync_entry else "Noch kein Lauf"
+    )
+    page_generated = _format_now()
     custom_logo_html = ""
     if settings.dashboard_logo_url:
         custom_logo_html = (
@@ -82,6 +98,10 @@ async def dashboard(request: Request):
               <p class="eyebrow">mealie2bring</p>
               <h1>Mealie → Bring</h1>
               <p class="subtitle">Letzter Abruf alle {settings.sync_interval_minutes} Minuten</p>
+              <div class="status-meta">
+                <p class="meta-line">Letzter Lauf: {last_sync_display}</p>
+                <p class="meta-line">Seite erstellt: {page_generated}</p>
+              </div>
               </div>
             </div>
             <div class="actions">
