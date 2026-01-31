@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from .i18n import translate
 from .scheduler import create_scheduler
 from .settings import Settings, get_settings
 from .sync import load_log_entries, sync_mealie_to_bring
@@ -59,16 +60,32 @@ def _format_now(settings: Settings, locale: str) -> str:
     return _format_timestamp(datetime.now(timezone.utc).isoformat(), settings, locale)
 
 
+def _translate_event(entry: dict, locale: str, settings: Settings) -> None:
+    if entry.get("type") != "event":
+        return
+    message_key = entry.get("message_key")
+    if not message_key:
+        return
+    entry["message"] = translate(
+        message_key,
+        entry.get("context", {}),
+        locale=locale,
+        fallback_locale=settings.default_locale,
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     settings = get_settings()
     locale = _resolve_locale(request, settings)
     entries = load_log_entries(settings)
+    for entry in entries:
+        _translate_event(entry, locale, settings)
     last_sync_entry = next(
         (
             entry
             for entry in entries
-            if entry.get("type") == "event" and entry.get("message") == "Sync gestartet"
+            if entry.get("type") == "event" and entry.get("message_key") == "log.sync_started"
         ),
         None,
     )
