@@ -28,7 +28,9 @@ class Settings:
     log_retention_days: int
     port: int
     dashboard_logo_url: Optional[str]
+    ui_locale: Optional[str]
     default_locale: str
+    fallback_locale: str
     date_formats: Dict[str, str]
 
 
@@ -46,7 +48,9 @@ def get_settings() -> Settings:
         log_retention_days=_env_int("LOG_RETENTION_DAYS", 30),
         port=_env_int("PORT", 1235),
         dashboard_logo_url=os.getenv("DASHBOARD_LOGO_URL"),
+        ui_locale=os.getenv("UI_LOCALE"),
         default_locale=os.getenv("DASHBOARD_LOCALE", "de"),
+        fallback_locale=os.getenv("FALLBACK_LOCALE", "en"),
         date_formats={
             "de": os.getenv("DATE_FORMAT_DE", "%d.%m.%Y %H:%M"),
             "en": os.getenv("DATE_FORMAT_EN", "%Y-%m-%d %H:%M"),
