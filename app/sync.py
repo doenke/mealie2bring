@@ -89,7 +89,12 @@ def _prune_log_entries(settings: Settings) -> List[Dict[str, Any]]:
 
 def load_log_entries(settings: Settings) -> List[Dict[str, Any]]:
     entries = _prune_log_entries(settings)
-    return sorted(entries, key=lambda entry: entry.get("timestamp", ""), reverse=True)
+    filtered = [
+        entry
+        for entry in entries
+        if not (entry.get("type") == "item" and entry.get("status") == "skipped")
+    ]
+    return sorted(filtered, key=lambda entry: entry.get("timestamp", ""), reverse=True)
 
 
 def _log_event(settings: Settings, level: str, message: str, context: Optional[Dict[str, Any]] = None) -> None:
@@ -258,18 +263,6 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
         results: List[Dict[str, Any]] = []
         for item in items:
             if item.get("checked"):
-                name, note, item_id, quantity, unit = _extract_item_details(item)
-                payload = {
-                    "status": "skipped",
-                    "name": name or "(unbekannt)",
-                    "note": note,
-                    "quantity": quantity,
-                    "unit": unit,
-                    "mealie": "done",
-                    "itemId": item_id,
-                }
-                _log_item(settings, payload)
-                results.append(payload)
                 continue
 
             name, note, item_id, quantity, unit = _extract_item_details(item)
