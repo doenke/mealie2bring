@@ -1,16 +1,16 @@
 # mealie2bring
 
-Synchronizes open items from a Mealie shopping list into Bring! and marks them as completed in Mealie. The web UI shows the sync log and offers manual triggers.
+Synchronisiert offene Einträge aus einer Mealie-Einkaufsliste nach Bring! und hakt sie in Mealie ab. Die Weboberfläche zeigt das Log an und bietet einen manuellen Start.
 
 ## Features
 
-- Fully configurable via environment variables
-- Automatic sync on a configurable interval (default: 3 minutes)
-- Log output in the console and in the web UI (max. 30 days)
-- Manual sync via button and web service
-- Docker + Docker Compose setup on port 1235
+- Vollständig konfigurierbar über Umgebungsvariablen
+- Automatischer Sync im einstellbaren Rhythmus (Default: 3 Minuten)
+- Log-Ausgabe in der Konsole und Anzeige im Web-UI (max. 30 Tage)
+- Manuelles Starten per Button und per Webservice
+- Docker- & Docker-Compose-Setup auf Port 1235
 
-## Quick start (Docker Compose)
+## Schnellstart (Docker Compose)
 
 ```bash
 docker compose up -d --build
