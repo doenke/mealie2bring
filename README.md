@@ -32,6 +32,7 @@ The UI is then available at `http://localhost:1235`.
 | `LOG_RETENTION_DAYS` | Log retention in days | `30` |
 | `LOG_PATH` | Path to the log file | `/data/mealie_bring_sync.log` |
 | `PORT` | Web server port | `1235` |
+| `DASHBOARD_LOGO_URL` | Optional: URL for a logo shown in the dashboard header | empty |
 
 ## Endpoints
 

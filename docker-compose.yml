@@ -15,6 +15,7 @@ services:
       LOG_RETENTION_DAYS: "30"
       LOG_PATH: "/data/mealie_bring_sync.log"
       PORT: "1235"
+      DASHBOARD_LOGO_URL: ""
     volumes:
       - mealie2bring-data:/data
     restart: unless-stopped

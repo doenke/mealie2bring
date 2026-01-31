@@ -22,6 +22,11 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 async def dashboard(request: Request):
     settings = get_settings()
     entries = load_log_entries(settings)
+    logo_html = ""
+    if settings.dashboard_logo_url:
+        logo_html = (
+            f'<img src="{settings.dashboard_logo_url}" alt="Logo" class="logo" />'
+        )
     rows = []
     for entry in entries:
         if entry.get("type") != "item":
@@ -48,10 +53,13 @@ async def dashboard(request: Request):
       <body>
         <main class="container">
           <header class="header">
-            <div>
+            <div class="header-title">
+              {logo_html}
+              <div>
               <p class="eyebrow">mealie2bring</p>
               <h1>Mealie → Bring</h1>
               <p class="subtitle">Letzter Abruf alle {settings.sync_interval_minutes} Minuten</p>
+              </div>
             </div>
             <form method="post" action="/trigger">
               <button type="submit">Manuell starten</button>

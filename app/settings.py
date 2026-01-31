@@ -27,6 +27,7 @@ class Settings:
     log_path: Path
     log_retention_days: int
     port: int
+    dashboard_logo_url: Optional[str]
 
 
 @lru_cache
@@ -42,4 +43,5 @@ def get_settings() -> Settings:
         log_path=Path(os.getenv("LOG_PATH", "/data/mealie_bring_sync.log")),
         log_retention_days=_env_int("LOG_RETENTION_DAYS", 30),
         port=_env_int("PORT", 1235),
+        dashboard_logo_url=os.getenv("DASHBOARD_LOGO_URL"),
     )
