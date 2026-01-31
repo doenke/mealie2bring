@@ -24,6 +24,13 @@ body {
   margin-bottom: 32px;
 }
 
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -54,6 +61,26 @@ button {
 
 button:hover {
   filter: brightness(0.95);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.notification {
+  min-height: 18px;
+  margin: 0;
+  font-size: 14px;
+  color: #9aa8bd;
+}
+
+.notification.is-success {
+  color: #70e000;
+}
+
+.notification.is-error {
+  color: #ff4d6d;
 }
 
 .panel {
@@ -112,6 +139,10 @@ th {
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions {
     align-items: flex-start;
   }
 }
