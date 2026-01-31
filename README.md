@@ -53,7 +53,7 @@ The UI is then available at `http://localhost:1235` (or `http://localhost:$PORT`
 | `BRING_EMAIL` | Bring login email | empty |
 | `BRING_PASSWORD` | Bring password | empty |
 | `BRING_LIST_UUID` | Optional: Bring list UUID (overrides login response) | empty |
-| `SYNC_INTERVAL_MINUTES` | Sync interval in minutes | `3` |
+| `SYNC_INTERVAL_MINUTES` | Sync interval in minutes (set to `0` to disable automatic sync) | `3` |
 | `LOG_RETENTION_DAYS` | Log retention in days | `30` |
 | `LOG_PATH` | Path to the log file | `/data/mealie_bring_sync.log` |
 | `PORT` | Web server port | `1235` |

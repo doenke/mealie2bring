@@ -95,6 +95,11 @@ async def dashboard(request: Request):
             f"</tr>"
         )
 
+    sync_label = (
+        "Automatischer Abruf deaktiviert"
+        if settings.sync_interval_minutes <= 0
+        else f"Abruf alle {settings.sync_interval_minutes} Minuten"
+    )
     html = f"""
     <!DOCTYPE html>
     <html lang="de">
@@ -113,7 +118,7 @@ async def dashboard(request: Request):
               <div>
               <p class="eyebrow">mealie2bring</p>
               <h1>Mealie → Bring</h1>
-              <p class="subtitle">Abruf alle {settings.sync_interval_minutes} Minuten</p>
+              <p class="subtitle">{sync_label}</p>
               <div class="status-meta">
                 <p class="meta-line">Letzter Lauf: {last_sync_display}</p>
                 <p class="meta-line">Seite erstellt: {page_generated}</p>
@@ -225,15 +230,16 @@ async def startup_event():
         if job.id == "mealie-bring-sync":
             job.remove()
 
-    scheduler.add_job(
-        sync_mealie_to_bring,
-        "interval",
-        minutes=settings.sync_interval_minutes,
-        id="mealie-bring-sync",
-        max_instances=1,
-        coalesce=True,
-        kwargs={"trigger": "scheduler"},
-    )
+    if settings.sync_interval_minutes > 0:
+        scheduler.add_job(
+            sync_mealie_to_bring,
+            "interval",
+            minutes=settings.sync_interval_minutes,
+            id="mealie-bring-sync",
+            max_instances=1,
+            coalesce=True,
+            kwargs={"trigger": "scheduler"},
+        )
 
 
 @app.on_event("shutdown")
