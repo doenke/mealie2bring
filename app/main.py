@@ -56,10 +56,19 @@ async def dashboard(request: Request):
             break
     page_time = datetime.now(timezone.utc).astimezone().strftime("%H:%M")
     logo_html = ""
+    custom_logo_html = ""
     if settings.dashboard_logo_url:
-        logo_html = (
-            f'<img src="{settings.dashboard_logo_url}" alt="Logo" class="logo" />'
+        custom_logo_html = (
+            f'<div class="logo logo--custom"><img src="{settings.dashboard_logo_url}" alt="Logo" /></div>'
         )
+    logo_html = (
+        '<div class="logo-stack">'
+        '<div class="logo logo--generated">'
+        '<img src="/static/logo-combo.svg" alt="Mealie + Bring Logo" />'
+        "</div>"
+        f"{custom_logo_html}"
+        "</div>"
+    )
     rows = []
     for entry in entries:
         if entry.get("type") != "item":
@@ -68,8 +77,8 @@ async def dashboard(request: Request):
             f"<tr>"
             f"<td>{_format_timestamp(entry.get('timestamp',''))}</td>"
             f"<td>{entry.get('name','')}</td>"
-            f"<td>{entry.get('quantity','')}</td>"
-            f"<td>{entry.get('unit','')}</td>"
+            f"<td>{entry.get('quantity') or ''}</td>"
+            f"<td>{entry.get('unit') or ''}</td>"
             f"<td class='{entry.get('status','')}'>{entry.get('status','')}</td>"
             f"<td>{entry.get('mealie','-')}</td>"
             f"</tr>"
