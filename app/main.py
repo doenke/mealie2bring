@@ -84,6 +84,7 @@ async def dashboard(request: Request):
         status_label = status_labels.get(status_value, status_value)
         mealie_value = entry.get("mealie", "-")
         mealie_label = mealie_labels.get(mealie_value, mealie_value)
+        mealie_class = f" class='{mealie_value}'" if mealie_value and mealie_value != "-" else ""
         rows.append(
             f"<tr>"
             f"<td>{_format_timestamp(entry.get('timestamp',''))}</td>"
@@ -91,7 +92,7 @@ async def dashboard(request: Request):
             f"<td>{entry.get('quantity') or ''}</td>"
             f"<td>{entry.get('unit') or ''}</td>"
             f"<td class='{status_value}'>{status_label}</td>"
-            f"<td>{mealie_label}</td>"
+            f"<td{mealie_class}>{mealie_label}</td>"
             f"</tr>"
         )
 
