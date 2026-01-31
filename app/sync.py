@@ -97,16 +97,16 @@ def load_log_entries(settings: Settings) -> List[Dict[str, Any]]:
     return sorted(filtered, key=lambda entry: entry.get("timestamp", ""), reverse=True)
 
 
-def _log_event(settings: Settings, level: str, message: str, context: Optional[Dict[str, Any]] = None) -> None:
+def _log_event(settings: Settings, level: str, message_key: str, context: Optional[Dict[str, Any]] = None) -> None:
     entry = {
         "timestamp": _now().isoformat(),
         "level": level,
         "type": "event",
-        "message": message,
+        "message_key": message_key,
         "context": context or {},
     }
     _append_log_entry(settings, entry)
-    logger.log(getattr(logging, level, logging.INFO), "%s | %s", message, context or {})
+    logger.log(getattr(logging, level, logging.INFO), "%s | %s", message_key, context or {})
 
 
 def _log_item(settings: Settings, payload: Dict[str, Any]) -> None:
@@ -130,7 +130,7 @@ async def _fetch_mealie_list(settings: Settings) -> List[Dict[str, Any]]:
         async with session.get(url, headers=headers) as response:
             if response.status != 200:
                 body = await response.text()
-                _log_event(settings, "ERROR", "Fehler beim Abrufen der Mealie-Liste", {
+                _log_event(settings, "ERROR", "log.mealie_fetch_failed", {
                     "status": response.status,
                     "body": body,
                 })
@@ -141,7 +141,7 @@ async def _fetch_mealie_list(settings: Settings) -> List[Dict[str, Any]]:
 
 async def _bring_login(settings: Settings) -> Optional[BringAuth]:
     if not settings.bring_email or not settings.bring_password:
-        _log_event(settings, "ERROR", "Bring Zugangsdaten fehlen")
+        _log_event(settings, "ERROR", "log.bring_credentials_missing")
         return None
 
     url = "https://api.getbring.com/rest/v2/bringauth"
@@ -161,7 +161,7 @@ async def _bring_login(settings: Settings) -> Optional[BringAuth]:
         async with session.post(url, data=payload, headers=headers) as response:
             if response.status != 200:
                 body = await response.text()
-                _log_event(settings, "ERROR", "Bring Login fehlgeschlagen", {
+                _log_event(settings, "ERROR", "log.bring_login_failed", {
                     "status": response.status,
                     "body": body,
                 })
@@ -172,7 +172,7 @@ async def _bring_login(settings: Settings) -> Optional[BringAuth]:
     user_uuid = data.get("uuid")
     list_uuid = settings.bring_list_uuid or data.get("bringListUUID")
     if not token or not user_uuid or not list_uuid:
-        _log_event(settings, "ERROR", "Bring Login Antwort unvollständig", data)
+        _log_event(settings, "ERROR", "log.bring_login_incomplete", data)
         return None
 
     return BringAuth(token=token, user_uuid=user_uuid, list_uuid=list_uuid)
@@ -240,20 +240,20 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
     settings = get_settings()
     async with SYNC_LOCK:
         _prune_log_entries(settings)
-        _log_event(settings, "INFO", "Sync gestartet", {"trigger": trigger})
+        _log_event(settings, "INFO", "log.sync_started", {"trigger": trigger})
 
         if not settings.mealie_api_token or not settings.mealie_shopping_list_id:
-            _log_event(settings, "ERROR", "Mealie Konfiguration fehlt")
+            _log_event(settings, "ERROR", "log.mealie_config_missing")
             return []
 
         items = await _fetch_mealie_list(settings)
         if not items:
-            _log_event(settings, "INFO", "Keine Items in der Mealie-Liste gefunden")
+            _log_event(settings, "INFO", "log.mealie_no_items")
             return []
 
         open_items = [item for item in items if not item.get("checked")]
         if not open_items:
-            _log_event(settings, "INFO", "Keine offenen Items - Bring wird nicht kontaktiert")
+            _log_event(settings, "INFO", "log.mealie_no_open_items")
             return []
 
         auth = await _bring_login(settings)
@@ -267,7 +267,7 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
 
             name, note, item_id, quantity, unit = _extract_item_details(item)
             if not name:
-                _log_event(settings, "WARN", "Item ohne Namen übersprungen", {"itemId": item_id})
+                _log_event(settings, "WARN", "log.item_missing_name", {"itemId": item_id})
                 continue
 
             ok = await _bring_add_item(auth, name, note)
@@ -278,12 +278,12 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
                 done = await _mealie_mark_done(settings, item)
                 mealie_state = "done" if done else "open"
                 if done:
-                    _log_event(settings, "INFO", "In Mealie als erledigt markiert", {
+                    _log_event(settings, "INFO", "log.mealie_mark_done", {
                         "itemId": item_id,
                         "name": name,
                     })
                 else:
-                    _log_event(settings, "WARN", "Konnte in Mealie nicht abhaken", {
+                    _log_event(settings, "WARN", "log.mealie_mark_failed", {
                         "itemId": item_id,
                         "name": name,
                     })
@@ -291,13 +291,13 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
                 mealie_state = "skipped"
 
             if ok:
-                _log_event(settings, "INFO", "An Bring übertragen", {
+                _log_event(settings, "INFO", "log.bring_item_transferred", {
                     "itemId": item_id,
                     "name": name,
                     "note": note,
                 })
             else:
-                _log_event(settings, "ERROR", "Bring-Übertragung fehlgeschlagen", {
+                _log_event(settings, "ERROR", "log.bring_item_failed", {
                     "itemId": item_id,
                     "name": name,
                 })
