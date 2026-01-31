@@ -57,6 +57,11 @@ The UI is then available at `http://localhost:1235` (or `http://localhost:$PORT`
 | `LOG_PATH` | Path to the log file | `/data/mealie_bring_sync.log` |
 | `PORT` | Web server port | `1235` |
 | `DASHBOARD_LOGO_URL` | Optional: URL for a logo shown in the dashboard header | empty |
+| `UI_LOCALE` | Optional: Force UI locale (e.g. `de`, `en`, `de-DE`) | empty |
+| `DASHBOARD_LOCALE` | Default locale used when none matches | `de` |
+| `FALLBACK_LOCALE` | Fallback locale for missing translations | `en` |
+| `DATE_FORMAT_DE` | Datetime format string for German locale | `%d.%m.%Y %H:%M` |
+| `DATE_FORMAT_EN` | Datetime format string for English locale | `%Y-%m-%d %H:%M` |
 
 ## Endpoints
 
