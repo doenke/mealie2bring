@@ -2,6 +2,10 @@ services:
   mealie2bring:
     build: https://github.com/doenke/mealie2bring.git#main
     container_name: mealie2bring
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0 --port 1235
+      --proxy-headers --forwarded-allow-ips="*"
     ports:
       - "1235:1235"
     environment:
