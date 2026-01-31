@@ -156,6 +156,12 @@ async def dashboard(request: Request):
             </div>
           </section>
         </main>
+        <footer class="page-footer">
+          <small>
+            Ein Projekt von <a href="mailto:soenke@soenkejacobs.de">Sönke Jacobs</a>
+            · <a href="https://github.com/doenke/mealie2bring">GitHub</a>
+          </small>
+        </footer>
       </body>
       <script>
         const triggerButton = document.getElementById("manual-trigger");
