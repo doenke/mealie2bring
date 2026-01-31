@@ -181,8 +181,7 @@ async def dashboard(request: Request):
             <div class="header-title">
               {logo_html}
               <div>
-              <p class="eyebrow">mealie2bring</p>
-              <h1>{t("dashboard.title")}</h1>
+              <h1 class="title-eyebrow">{t("dashboard.title")}</h1>
               <p class="subtitle">{sync_label}</p>
               <div class="status-meta">
                 <p class="meta-line">{t("dashboard.last_run")}: {last_sync_display}</p>
