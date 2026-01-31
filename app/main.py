@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .scheduler import create_scheduler
-from .settings import get_settings
+from .settings import Settings, get_settings
 from .sync import load_log_entries, sync_mealie_to_bring
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -19,7 +19,24 @@ static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-def _format_timestamp(value: str) -> str:
+def _resolve_locale(request: Request, settings: Settings) -> str:
+    header = request.headers.get("accept-language", "")
+    for part in header.split(","):
+        lang = part.split(";")[0].strip().lower()
+        if not lang:
+            continue
+        normalized = lang.replace("_", "-")
+        if normalized in settings.date_formats:
+            return normalized
+        base = normalized.split("-")[0]
+        if base in settings.date_formats:
+            return base
+    if settings.default_locale in settings.date_formats:
+        return settings.default_locale
+    return next(iter(settings.date_formats), "de")
+
+
+def _format_timestamp(value: str, settings: Settings, locale: str) -> str:
     if not value:
         return ""
     try:
@@ -29,16 +46,23 @@ def _format_timestamp(value: str) -> str:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     localized = parsed.astimezone()
-    return localized.strftime("%d.%m.%Y %H:%M")
+    format_string = settings.date_formats.get(locale)
+    if not format_string:
+        base_locale = locale.split("-")[0]
+        format_string = settings.date_formats.get(base_locale)
+    if not format_string:
+        format_string = settings.date_formats.get(settings.default_locale, "%d.%m.%Y %H:%M")
+    return localized.strftime(format_string)
 
 
-def _format_now() -> str:
-    return _format_timestamp(datetime.now(timezone.utc).isoformat())
+def _format_now(settings: Settings, locale: str) -> str:
+    return _format_timestamp(datetime.now(timezone.utc).isoformat(), settings, locale)
 
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     settings = get_settings()
+    locale = _resolve_locale(request, settings)
     entries = load_log_entries(settings)
     last_sync_entry = next(
         (
@@ -49,9 +73,11 @@ async def dashboard(request: Request):
         None,
     )
     last_sync_display = (
-        _format_timestamp(last_sync_entry.get("timestamp", "")) if last_sync_entry else "Noch kein Lauf"
+        _format_timestamp(last_sync_entry.get("timestamp", ""), settings, locale)
+        if last_sync_entry
+        else "Noch kein Lauf"
     )
-    page_generated = _format_now()
+    page_generated = _format_now(settings, locale)
     custom_logo_html = ""
     if settings.dashboard_logo_url:
         custom_logo_html = (
@@ -87,7 +113,7 @@ async def dashboard(request: Request):
         mealie_class = f" class='{mealie_value}'" if mealie_value and mealie_value != "-" else ""
         rows.append(
             f"<tr>"
-            f"<td>{_format_timestamp(entry.get('timestamp',''))}</td>"
+            f"<td>{_format_timestamp(entry.get('timestamp',''), settings, locale)}</td>"
             f"<td>{entry.get('name','')}</td>"
             f"<td>{entry.get('quantity') or ''}</td>"
             f"<td>{entry.get('unit') or ''}</td>"
@@ -103,7 +129,7 @@ async def dashboard(request: Request):
     )
     html = f"""
     <!DOCTYPE html>
-    <html lang="de">
+    <html lang="{locale}">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
