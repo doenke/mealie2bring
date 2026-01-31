@@ -37,9 +37,10 @@ body {
 }
 
 .logo {
-  width: 76px;
-  height: 76px;
-  border-radius: 14px;
+  width: 112px;
+  height: 112px;
+  border-radius: 28px;
+  object-fit: contain;
   background: #0f131a;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
   display: grid;
