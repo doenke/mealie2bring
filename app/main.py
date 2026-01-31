@@ -61,9 +61,10 @@ async def dashboard(request: Request):
               <p class="subtitle">Letzter Abruf alle {settings.sync_interval_minutes} Minuten</p>
               </div>
             </div>
-            <form method="post" action="/trigger">
-              <button type="submit">Manuell starten</button>
-            </form>
+            <div class="actions">
+              <button type="button" id="manual-trigger">Manuell starten</button>
+              <p id="trigger-notice" class="notification" role="status" aria-live="polite"></p>
+            </div>
           </header>
 
           <section class="panel">
@@ -90,6 +91,35 @@ async def dashboard(request: Request):
           </section>
         </main>
       </body>
+      <script>
+        const triggerButton = document.getElementById("manual-trigger");
+        const notice = document.getElementById("trigger-notice");
+
+        const showNotice = (message, status) => {{
+          notice.textContent = message;
+          notice.classList.remove("is-success", "is-error");
+          if (status) {{
+            notice.classList.add(status);
+          }}
+        }};
+
+        triggerButton.addEventListener("click", async () => {{
+          triggerButton.disabled = true;
+          showNotice("Manueller Sync wird gestartet …");
+          try {{
+            const response = await fetch("/trigger", {{"method": "POST"}});
+            if (!response.ok) {{
+              throw new Error("request failed");
+            }}
+            await response.json();
+            showNotice("Sync angestoßen. Ergebnisse folgen im Log.", "is-success");
+          }} catch (error) {{
+            showNotice("Sync konnte nicht gestartet werden. Bitte erneut versuchen.", "is-error");
+          }} finally {{
+            triggerButton.disabled = false;
+          }}
+        }});
+      </script>
     </html>
     """
     return HTMLResponse(content=html)
