@@ -39,14 +39,19 @@ async def dashboard(request: Request):
     custom_logo_html = ""
     if settings.dashboard_logo_url:
         custom_logo_html = (
-            f'<div class="logo logo--custom"><img src="{settings.dashboard_logo_url}" alt="Logo" /></div>'
+            f'<div class="logo logo--custom actions-logo"><img src="{settings.dashboard_logo_url}" alt="Logo" /></div>'
         )
     logo_html = (
         '<div class="logo-stack">'
         '<div class="logo logo--generated">'
         '<img src="/static/logo-combo.svg" alt="Mealie + Bring Logo" />'
         "</div>"
+        "</div>"
+    )
+    actions_row_html = (
+        '<div class="actions-row">'
         f"{custom_logo_html}"
+        '<button type="button" id="manual-trigger">Manuell starten</button>'
         "</div>"
     )
     rows = []
@@ -85,7 +90,7 @@ async def dashboard(request: Request):
               </div>
             </div>
             <div class="actions">
-              <button type="button" id="manual-trigger">Manuell starten</button>
+              {actions_row_html}
               <p id="trigger-notice" class="notification" role="status" aria-live="polite"></p>
             </div>
           </header>
