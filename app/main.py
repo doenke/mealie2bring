@@ -102,7 +102,7 @@ async def dashboard(request: Request):
               <div>
               <p class="eyebrow">mealie2bring</p>
               <h1>Mealie → Bring</h1>
-              <p class="subtitle">Letzter Abruf alle {settings.sync_interval_minutes} Minuten</p>
+              <p class="subtitle">Abruf alle {settings.sync_interval_minutes} Minuten</p>
               <div class="status-meta">
                 <p class="meta-line">Letzter Lauf: {last_sync_display}</p>
                 <p class="meta-line">Seite erstellt: {page_generated}</p>
