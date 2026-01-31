@@ -60,7 +60,7 @@ async def dashboard(request: Request):
     logo_html = (
         '<div class="logo-stack">'
         '<div class="logo logo--generated">'
-        '<img src="/static/logo-combo.svg" alt="Mealie + Bring Logo" />'
+        '<img src="/static/Mealie2Bring.png" alt="Mealie + Bring Logo" />'
         "</div>"
         "</div>"
     )
