@@ -261,9 +261,7 @@ async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any
             return []
 
         results: List[Dict[str, Any]] = []
-        for item in items:
-            if item.get("checked"):
-                continue
+        for item in open_items:
 
             name, note, item_id, quantity, unit = _extract_item_details(item)
             if not name:
