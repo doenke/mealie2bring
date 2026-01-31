@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 TRANSLATIONS: Dict[str, Dict[str, str]] = {
     "de": {
-        "dashboard.title": "Mealie → Bring",
+        "dashboard.title": "mealie2bring",
         "dashboard.subtitle.sync_disabled": "Automatischer Abruf deaktiviert",
         "dashboard.subtitle.sync_interval": "Abruf alle {minutes} Minuten",
         "dashboard.last_run": "Letzter Lauf",
@@ -41,7 +41,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "log.bring_item_failed": "Bring-Übertragung fehlgeschlagen",
     },
     "en": {
-        "dashboard.title": "Mealie → Bring",
+        "dashboard.title": "mealie2bring",
         "dashboard.subtitle.sync_disabled": "Automatic sync disabled",
         "dashboard.subtitle.sync_interval": "Sync every {minutes} minutes",
         "dashboard.last_run": "Last run",

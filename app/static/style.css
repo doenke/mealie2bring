@@ -98,14 +98,6 @@ body {
   height: 112px;
 }
 
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 12px;
-  margin-bottom: 8px;
-  color: #7a8aa0;
-}
-
 .subtitle {
   margin: 8px 0 0;
   color: #9aa8bd;
@@ -126,6 +118,11 @@ body {
 h1 {
   margin: 0;
   font-size: 32px;
+}
+
+.title-eyebrow {
+  color: #7a8aa0;
+  letter-spacing: 0.2em;
 }
 
 button {
