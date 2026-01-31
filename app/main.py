@@ -1,3 +1,5 @@
+import html
+import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -72,6 +74,12 @@ def _format_now(settings: Settings, locale: str) -> str:
     return _format_timestamp(datetime.now(timezone.utc).isoformat(), settings, locale)
 
 
+def _escape_html(value: str | None) -> str:
+    if value is None:
+        return ""
+    return html.escape(str(value), quote=True)
+
+
 def _translate_event(entry: dict, locale: str, settings: Settings) -> None:
     if entry.get("type") != "event":
         return
@@ -118,9 +126,11 @@ async def dashboard(request: Request):
     page_generated = _format_now(settings, locale)
     custom_logo_html = ""
     if settings.dashboard_logo_url:
+        escaped_logo_url = _escape_html(settings.dashboard_logo_url)
         custom_logo_html = (
-            f'<div class="logo logo--custom actions-logo"><img src="{settings.dashboard_logo_url}" alt="Logo" /></div>'
+            f'<div class="logo logo--custom actions-logo"><img src="{escaped_logo_url}" alt="Logo" /></div>'
         )
+    manual_trigger_label = _escape_html(t("dashboard.manual_trigger"))
     logo_html = (
         '<div class="logo-stack">'
         '<div class="logo logo--generated">'
@@ -131,7 +141,7 @@ async def dashboard(request: Request):
     actions_row_html = (
         '<div class="actions-row">'
         f"{custom_logo_html}"
-        f'<button type="button" id="manual-trigger">{t("dashboard.manual_trigger")}</button>'
+        f'<button type="button" id="manual-trigger">{manual_trigger_label}</button>'
         "</div>"
     )
     status_labels = {
@@ -144,17 +154,23 @@ async def dashboard(request: Request):
     for entry in entries:
         if entry.get("type") != "item":
             continue
-        status_value = entry.get("status", "")
-        status_label = status_labels.get(status_value, status_value)
-        mealie_value = entry.get("mealie", "-")
-        mealie_label = mealie_labels.get(mealie_value, mealie_value)
-        mealie_class = f" class='{mealie_value}'" if mealie_value and mealie_value != "-" else ""
+        status_value_raw = entry.get("status", "")
+        status_label_raw = status_labels.get(status_value_raw, status_value_raw)
+        mealie_value_raw = entry.get("mealie", "-")
+        mealie_label_raw = mealie_labels.get(mealie_value_raw, mealie_value_raw)
+        status_value = _escape_html(status_value_raw)
+        status_label = _escape_html(status_label_raw)
+        mealie_value = _escape_html(mealie_value_raw)
+        mealie_label = _escape_html(mealie_label_raw)
+        mealie_class = (
+            f" class='{mealie_value}'" if mealie_value_raw and mealie_value_raw != "-" else ""
+        )
         rows.append(
             f"<tr>"
-            f"<td>{_format_timestamp(entry.get('timestamp',''), settings, locale)}</td>"
-            f"<td>{entry.get('name','')}</td>"
-            f"<td>{entry.get('quantity') or ''}</td>"
-            f"<td>{entry.get('unit') or ''}</td>"
+            f"<td>{_escape_html(_format_timestamp(entry.get('timestamp',''), settings, locale))}</td>"
+            f"<td>{_escape_html(entry.get('name',''))}</td>"
+            f"<td>{_escape_html(entry.get('quantity') or '')}</td>"
+            f"<td>{_escape_html(entry.get('unit') or '')}</td>"
             f"<td class='{status_value}'>{status_label}</td>"
             f"<td{mealie_class}>{mealie_label}</td>"
             f"</tr>"
@@ -165,13 +181,19 @@ async def dashboard(request: Request):
         if settings.sync_interval_minutes <= 0
         else t("dashboard.subtitle.sync_interval", {"minutes": settings.sync_interval_minutes})
     )
+    translations = {
+        "noticeStarting": t("dashboard.notice.starting"),
+        "noticeStarted": t("dashboard.notice.started"),
+        "noticeFailed": t("dashboard.notice.failed"),
+    }
+    translations_json = json.dumps(translations)
     html = f"""
     <!DOCTYPE html>
-    <html lang="{locale}">
+    <html lang="{_escape_html(locale)}">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{t("dashboard.title")}</title>
+        <title>{_escape_html(t("dashboard.title"))}</title>
         <link rel="stylesheet" href="/static/style.css" />
         <link rel="icon" type="image/png" href="/static/Mealie2Bring.png" />
       </head>
@@ -181,11 +203,11 @@ async def dashboard(request: Request):
             <div class="header-title">
               {logo_html}
               <div>
-              <h1 class="title-eyebrow">{t("dashboard.title")}</h1>
-              <p class="subtitle">{sync_label}</p>
+              <h1 class="title-eyebrow">{_escape_html(t("dashboard.title"))}</h1>
+              <p class="subtitle">{_escape_html(sync_label)}</p>
               <div class="status-meta">
-                <p class="meta-line">{t("dashboard.last_run")}: {last_sync_display}</p>
-                <p class="meta-line">{t("dashboard.page_generated")}: {page_generated}</p>
+                <p class="meta-line">{_escape_html(t("dashboard.last_run"))}: {_escape_html(last_sync_display)}</p>
+                <p class="meta-line">{_escape_html(t("dashboard.page_generated"))}: {_escape_html(page_generated)}</p>
               </div>
               </div>
             </div>
@@ -197,23 +219,23 @@ async def dashboard(request: Request):
 
           <section class="panel">
             <div class="panel-header">
-              <h2>{t("dashboard.log_title")}</h2>
-              <p>{t("dashboard.log_subtitle")}</p>
+              <h2>{_escape_html(t("dashboard.log_title"))}</h2>
+              <p>{_escape_html(t("dashboard.log_subtitle"))}</p>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th>{t("dashboard.table.time")}</th>
-                    <th>{t("dashboard.table.item")}</th>
-                    <th>{t("dashboard.table.quantity")}</th>
-                    <th>{t("dashboard.table.unit")}</th>
-                    <th>{t("dashboard.table.bring")}</th>
-                    <th>{t("dashboard.table.mealie")}</th>
+                    <th>{_escape_html(t("dashboard.table.time"))}</th>
+                    <th>{_escape_html(t("dashboard.table.item"))}</th>
+                    <th>{_escape_html(t("dashboard.table.quantity"))}</th>
+                    <th>{_escape_html(t("dashboard.table.unit"))}</th>
+                    <th>{_escape_html(t("dashboard.table.bring"))}</th>
+                    <th>{_escape_html(t("dashboard.table.mealie"))}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {''.join(rows) if rows else f'<tr><td colspan="6">{t("dashboard.table.empty")}</td></tr>'}
+                  {''.join(rows) if rows else f'<tr><td colspan="6">{_escape_html(t("dashboard.table.empty"))}</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -221,17 +243,13 @@ async def dashboard(request: Request):
         </main>
         <footer class="page-footer">
           <small>
-            {t("dashboard.footer.project_by")} <a href="mailto:soenke@soenkejacobs.de">Sönke Jacobs</a>
-            · <a href="https://github.com/doenke/mealie2bring">{t("dashboard.footer.github")}</a>
+            {_escape_html(t("dashboard.footer.project_by"))} <a href="mailto:soenke@soenkejacobs.de">Sönke Jacobs</a>
+            · <a href="https://github.com/doenke/mealie2bring">{_escape_html(t("dashboard.footer.github"))}</a>
           </small>
         </footer>
       </body>
       <script>
-        const translations = {{
-          noticeStarting: "{t('dashboard.notice.starting')}",
-          noticeStarted: "{t('dashboard.notice.started')}",
-          noticeFailed: "{t('dashboard.notice.failed')}",
-        }};
+        const translations = {translations_json};
         const triggerButton = document.getElementById("manual-trigger");
         const notice = document.getElementById("trigger-notice");
 
