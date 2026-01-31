@@ -1,6 +1,6 @@
 services:
   mealie2bring:
-    build: https://github.com/doenke/autostrom.git#main
+    build: .
     container_name: mealie2bring
     ports:
       - "1235:1235"
