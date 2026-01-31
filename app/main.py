@@ -70,18 +70,28 @@ async def dashboard(request: Request):
         '<button type="button" id="manual-trigger">Manuell starten</button>'
         "</div>"
     )
+    status_labels = {
+        "ok": "übernommen",
+    }
+    mealie_labels = {
+        "done": "erledigt",
+    }
     rows = []
     for entry in entries:
         if entry.get("type") != "item":
             continue
+        status_value = entry.get("status", "")
+        status_label = status_labels.get(status_value, status_value)
+        mealie_value = entry.get("mealie", "-")
+        mealie_label = mealie_labels.get(mealie_value, mealie_value)
         rows.append(
             f"<tr>"
             f"<td>{_format_timestamp(entry.get('timestamp',''))}</td>"
             f"<td>{entry.get('name','')}</td>"
             f"<td>{entry.get('quantity') or ''}</td>"
             f"<td>{entry.get('unit') or ''}</td>"
-            f"<td class='{entry.get('status','')}'>{entry.get('status','')}</td>"
-            f"<td>{entry.get('mealie','-')}</td>"
+            f"<td class='{status_value}'>{status_label}</td>"
+            f"<td>{mealie_label}</td>"
             f"</tr>"
         )
 
@@ -129,7 +139,7 @@ async def dashboard(request: Request):
                     <th>Artikel</th>
                     <th>Menge</th>
                     <th>Einheit</th>
-                    <th>Status</th>
+                    <th>Bring</th>
                     <th>Mealie</th>
                   </tr>
                 </thead>
