@@ -33,6 +33,8 @@ def _format_quantity(value: Optional[float]) -> str:
         numeric = float(value)
     except (TypeError, ValueError):
         return str(value)
+    if numeric == 0:
+        return ""
     if numeric.is_integer():
         return str(int(numeric))
     return str(numeric)
