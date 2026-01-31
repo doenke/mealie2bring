@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 
 def _env_int(name: str, default: int) -> int:
@@ -28,6 +28,8 @@ class Settings:
     log_retention_days: int
     port: int
     dashboard_logo_url: Optional[str]
+    default_locale: str
+    date_formats: Dict[str, str]
 
 
 @lru_cache
@@ -44,4 +46,9 @@ def get_settings() -> Settings:
         log_retention_days=_env_int("LOG_RETENTION_DAYS", 30),
         port=_env_int("PORT", 1235),
         dashboard_logo_url=os.getenv("DASHBOARD_LOGO_URL"),
+        default_locale=os.getenv("DASHBOARD_LOCALE", "de"),
+        date_formats={
+            "de": os.getenv("DATE_FORMAT_DE", "%d.%m.%Y %H:%M"),
+            "en": os.getenv("DATE_FORMAT_EN", "%Y-%m-%d %H:%M"),
+        },
     )
