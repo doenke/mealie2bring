@@ -16,8 +16,29 @@ It preserves the quantities and units properly during the transfer to Bring.
 
 ## Quickstart (Docker Compose)
 
-```bash
-docker compose up -d --build
+This compose is just a quickie... Find a full example in the repo:  [`compose.yaml`](./compose.yaml)
+
+```yaml
+services:
+  mealie2bring:
+    build: https://github.com/doenke/mealie2bring.git#main
+    container_name: mealie2bring
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0 --port ${PORT:-1235}
+      --proxy-headers --forwarded-allow-ips="*"
+    ports:
+      - "${PORT:-1235}:${PORT:-1235}"
+    environment:
+      MEALIE_BASE_URL: "https://mealie.example.com"
+      MEALIE_API_TOKEN: "your-mealie-token"
+      MEALIE_SHOPPING_LIST_ID: "your-shopping-list-id"
+      BRING_EMAIL: "you@example.com"
+      BRING_PASSWORD: "your-bring-password"
+      LOG_PATH: "/data/mealie_bring_sync.log"
+      PORT: "${PORT:-1235}"
+    restart: unless-stopped
+
 ```
 
 The UI is then available at `http://localhost:1235` (or `http://localhost:$PORT` if you override the port).
