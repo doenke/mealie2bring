@@ -30,7 +30,8 @@ async def dashboard(request: Request):
             f"<tr>"
             f"<td>{entry.get('timestamp','')}</td>"
             f"<td>{entry.get('name','')}</td>"
-            f"<td>{entry.get('note','')}</td>"
+            f"<td>{entry.get('quantity','')}</td>"
+            f"<td>{entry.get('unit','')}</td>"
             f"<td class='{entry.get('status','')}'>{entry.get('status','')}</td>"
             f"<td>{entry.get('mealie','-')}</td>"
             f"</tr>"
@@ -69,13 +70,14 @@ async def dashboard(request: Request):
                   <tr>
                     <th>Zeit</th>
                     <th>Artikel</th>
-                    <th>Notiz</th>
+                    <th>Menge</th>
+                    <th>Einheit</th>
                     <th>Status</th>
                     <th>Mealie</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {''.join(rows) if rows else '<tr><td colspan="5">Noch keine Einträge</td></tr>'}
+                  {''.join(rows) if rows else '<tr><td colspan="6">Noch keine Einträge</td></tr>'}
                 </tbody>
               </table>
             </div>
