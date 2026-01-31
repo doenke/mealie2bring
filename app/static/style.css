@@ -39,10 +39,7 @@ body {
 .logo {
   width: 112px;
   height: 112px;
-  border-radius: 28px;
   object-fit: contain;
-  background: #0f131a;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
   display: grid;
   place-items: center;
   position: relative;
@@ -56,11 +53,11 @@ body {
 }
 
 .logo--custom {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: none;
 }
 
 .logo--generated {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: none;
 }
 
 .actions {
