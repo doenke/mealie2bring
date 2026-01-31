@@ -1,92 +1,317 @@
-import os
 import asyncio
-import logging
 import json
-import re
-from typing import List, Dict, Optional
+import logging
 from dataclasses import dataclass
-from bring_api import BringClient
-import aiohttp
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-logger = logging.getLogger(__name__)
+import aiohttp
+
+from .settings import Settings, get_settings
+
+logger = logging.getLogger("mealie2bring")
+
+SYNC_LOCK = asyncio.Lock()
+
 
 @dataclass
-class ShoppingItem:
-    name: str
-    quantity: float
-    unit: str
-    original: str = ""
+class BringAuth:
+    token: str
+    user_uuid: str
+    list_uuid: str
 
-class Config:
-    def __init__(self):
-        self.mealie_base = os.getenv('MEALIE_BASE_URL', 'http://localhost:9000')
-        self.mealie_token = os.getenv('MEALIE_TOKEN', '')
-        self.mealie_list_id = os.getenv('MEALIE_SHOPPING_LIST_ID', 'default')
-        self.bring_user = os.getenv('BRING_USERNAME', '')
-        self.bring_pass = os.getenv('BRING_PASSWORD', '')
-        self.bring_list_name = os.getenv('BRING_LIST_NAME', 'Einkauf')
-        self.dry_run = os.getenv('DRY_RUN', 'false').lower() == 'true'
-        
-        # Unit mapping
-        raw_mapping = os.getenv('UNITS_MAPPING', 
-            '{"g":"g","kg":"kg","ml":"ml","l":"L","Stück":"Stk.","TL":"TL","EL":"EL","Prise":"Prise"}')
-        self.units = json.loads(raw_mapping)
 
-config = Config()
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
-def parse_quantity_unit(text: str) -> Optional[Dict]:
-    """1.5kg Äpfel → {'quantity':1.5, 'unit':'kg', 'name':'Äpfel'}"""
-    # Zahl + Einheit + Rest
-    pattern = r'^(\d+(?:[.,]\d+)?)\s*([a-zA-ZäöüÄÖÜ]+)\s+(.*)$'
-    match = re.match(pattern, text, re.IGNORECASE)
-    if match:
-        qty = float(match.group(1).replace(',', '.'))
-        unit = match.group(2).lower()
-        name = match.group(3).strip()
-        return {'quantity': qty, 'unit': unit, 'name': name}
-    return None
 
-async def fetch_mealie_items() -> List[ShoppingItem]:
-    """Real Mealie API call"""
-    url = f"{config.mealie_base}/api/shopping-lists/{config.mealie_list_id}/items"
-    headers = {"Authorization": f"Token {config.mealie_token}"}
-    
+def _format_quantity(value: Optional[float]) -> str:
+    if value is None:
+        return ""
     try:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-            async with session.get(url, headers=headers) as resp:
-                if resp.status != 200:
-                    logger.error(f"Mealie API {resp.status}: {await resp.text()}")
-                    return []
-                
-                data = await resp.json()
-                items = []
-                
-                for item in data.get('items', []):
-                    name = item.get('name', '').strip()
-                    
-                    # Try structured fields first
-                    qty = float(item.get('quantity', 1) or 1)
-                    unit = item.get('unit', '') or ''
-                    
-                    # Fallback: parse unstructured name
-                    if not unit or qty == 1:
-                        parsed = parse_quantity_unit(name)
-                        if parsed:
-                            name = parsed['name']
-                            qty = parsed['quantity']
-                            unit = parsed['unit']
-                    
-                    if name:
-                        items.append(ShoppingItem(name, qty, unit, item.get('name')))
-                
-                logger.info(f"✅ Mealie: {len(items)} Items geladen")
-                return items
-    except Exception as e:
-        logger.error(f"❌ Mealie fetch failed: {e}")
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if numeric.is_integer():
+        return str(int(numeric))
+    return str(numeric)
+
+
+def _build_note(quantity: Optional[float], unit: Optional[str]) -> str:
+    parts = [part for part in [_format_quantity(quantity), unit or ""] if part]
+    return " ".join(parts).strip()
+
+
+def _log_entry_path(settings: Settings) -> Path:
+    path = Path(settings.log_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _append_log_entry(settings: Settings, entry: Dict[str, Any]) -> None:
+    path = _log_entry_path(settings)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def _prune_log_entries(settings: Settings) -> List[Dict[str, Any]]:
+    path = Path(settings.log_path)
+    if not path.exists():
         return []
 
-async def push_to_bring(items: List[ShoppingItem]) -> List[str]:
-    """Real Bring! API push"""
-    if not config.bring_user or not confi
+    cutoff = _now() - timedelta(days=settings.log_retention_days)
+    retained: List[Dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        timestamp = entry.get("timestamp")
+        if not timestamp:
+            continue
+        try:
+            parsed = datetime.fromisoformat(timestamp)
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        if parsed >= cutoff:
+            retained.append(entry)
+
+    path.write_text("\n".join(json.dumps(entry, ensure_ascii=False) for entry in retained) + ("\n" if retained else ""), encoding="utf-8")
+    return retained
+
+
+def load_log_entries(settings: Settings) -> List[Dict[str, Any]]:
+    entries = _prune_log_entries(settings)
+    return sorted(entries, key=lambda entry: entry.get("timestamp", ""), reverse=True)
+
+
+def _log_event(settings: Settings, level: str, message: str, context: Optional[Dict[str, Any]] = None) -> None:
+    entry = {
+        "timestamp": _now().isoformat(),
+        "level": level,
+        "type": "event",
+        "message": message,
+        "context": context or {},
+    }
+    _append_log_entry(settings, entry)
+    logger.log(getattr(logging, level, logging.INFO), "%s | %s", message, context or {})
+
+
+def _log_item(settings: Settings, payload: Dict[str, Any]) -> None:
+    entry = {
+        "timestamp": _now().isoformat(),
+        "type": "item",
+        **payload,
+    }
+    _append_log_entry(settings, entry)
+    logger.info("%s | %s", payload.get("status"), {"name": payload.get("name"), "note": payload.get("note")})
+
+
+async def _fetch_mealie_list(settings: Settings) -> List[Dict[str, Any]]:
+    url = f"{settings.mealie_base_url.rstrip('/')}/api/households/shopping/lists/{settings.mealie_shopping_list_id}"
+    headers = {
+        "Authorization": f"Bearer {settings.mealie_api_token}",
+        "Accept": "application/json",
+    }
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.get(url, headers=headers) as response:
+            if response.status != 200:
+                body = await response.text()
+                _log_event(settings, "ERROR", "Fehler beim Abrufen der Mealie-Liste", {
+                    "status": response.status,
+                    "body": body,
+                })
+                return []
+            data = await response.json()
+            return data.get("listItems", [])
+
+
+async def _bring_login(settings: Settings) -> Optional[BringAuth]:
+    if not settings.bring_email or not settings.bring_password:
+        _log_event(settings, "ERROR", "Bring Zugangsdaten fehlen")
+        return None
+
+    url = "https://api.getbring.com/rest/v2/bringauth"
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-BRING-API-KEY": "webApp",
+        "X-BRING-CLIENT": "webApp",
+        "X-BRING-CLIENT-VERSION": "1.0.0",
+        "User-Agent": "BringWebApp/1.0",
+    }
+    payload = {
+        "email": settings.bring_email,
+        "password": settings.bring_password,
+    }
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.post(url, data=payload, headers=headers) as response:
+            if response.status != 200:
+                body = await response.text()
+                _log_event(settings, "ERROR", "Bring Login fehlgeschlagen", {
+                    "status": response.status,
+                    "body": body,
+                })
+                return None
+            data = await response.json()
+
+    token = data.get("access_token")
+    user_uuid = data.get("uuid")
+    list_uuid = settings.bring_list_uuid or data.get("bringListUUID")
+    if not token or not user_uuid or not list_uuid:
+        _log_event(settings, "ERROR", "Bring Login Antwort unvollständig", data)
+        return None
+
+    return BringAuth(token=token, user_uuid=user_uuid, list_uuid=list_uuid)
+
+
+async def _bring_add_item(auth: BringAuth, name: str, note: str) -> bool:
+    url = f"https://api.getbring.com/rest/v2/bringlists/{auth.list_uuid}"
+    headers = {
+        "Authorization": f"Bearer {auth.token}",
+        "X-BRING-USER-UUID": auth.user_uuid,
+        "X-BRING-API-KEY": "webApp",
+        "X-BRING-CLIENT": "webApp",
+        "X-BRING-CLIENT-VERSION": "1.0.0",
+        "User-Agent": "BringWebApp/1.0",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    payload = {
+        "purchase": name,
+        "recently": "",
+        "specification": note,
+    }
+
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.put(url, data=payload, headers=headers) as response:
+            return response.status in {200, 204}
+
+
+async def _mealie_mark_done(settings: Settings, item: Dict[str, Any]) -> bool:
+    url = f"{settings.mealie_base_url.rstrip('/')}/api/households/shopping/items"
+    headers = {
+        "Authorization": f"Bearer {settings.mealie_api_token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    payload_item = dict(item)
+    payload_item["checked"] = True
+    payload = json.dumps([payload_item])
+
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.put(url, data=payload, headers=headers) as response:
+            return response.status == 200
+
+
+def _extract_item_details(item: Dict[str, Any]) -> Tuple[Optional[str], str, Optional[str]]:
+    item_id = item.get("id")
+    name = None
+    food = item.get("food") or {}
+    if isinstance(food, dict):
+        name = food.get("name")
+    if not name:
+        name = item.get("note")
+    quantity = item.get("quantity")
+    unit = None
+    unit_data = item.get("unit") or {}
+    if isinstance(unit_data, dict):
+        unit = unit_data.get("name")
+    note = _build_note(quantity, unit)
+    return name, note, item_id
+
+
+async def sync_mealie_to_bring(trigger: str = "scheduler") -> List[Dict[str, Any]]:
+    settings = get_settings()
+    async with SYNC_LOCK:
+        _prune_log_entries(settings)
+        _log_event(settings, "INFO", "Sync gestartet", {"trigger": trigger})
+
+        if not settings.mealie_api_token or not settings.mealie_shopping_list_id:
+            _log_event(settings, "ERROR", "Mealie Konfiguration fehlt")
+            return []
+
+        items = await _fetch_mealie_list(settings)
+        if not items:
+            _log_event(settings, "INFO", "Keine Items in der Mealie-Liste gefunden")
+            return []
+
+        open_items = [item for item in items if not item.get("checked")]
+        if not open_items:
+            _log_event(settings, "INFO", "Keine offenen Items - Bring wird nicht kontaktiert")
+            return []
+
+        auth = await _bring_login(settings)
+        if not auth:
+            return []
+
+        results: List[Dict[str, Any]] = []
+        for item in items:
+            if item.get("checked"):
+                name, note, item_id = _extract_item_details(item)
+                payload = {
+                    "status": "skipped",
+                    "name": name or "(unbekannt)",
+                    "note": note,
+                    "mealie": "done",
+                    "itemId": item_id,
+                }
+                _log_item(settings, payload)
+                results.append(payload)
+                continue
+
+            name, note, item_id = _extract_item_details(item)
+            if not name:
+                _log_event(settings, "WARN", "Item ohne Namen übersprungen", {"itemId": item_id})
+                continue
+
+            ok = await _bring_add_item(auth, name, note)
+            status = "ok" if ok else "error"
+
+            mealie_state = "-"
+            if ok and item_id:
+                done = await _mealie_mark_done(settings, item)
+                mealie_state = "done" if done else "open"
+                if done:
+                    _log_event(settings, "INFO", "In Mealie als erledigt markiert", {
+                        "itemId": item_id,
+                        "name": name,
+                    })
+                else:
+                    _log_event(settings, "WARN", "Konnte in Mealie nicht abhaken", {
+                        "itemId": item_id,
+                        "name": name,
+                    })
+            elif ok:
+                mealie_state = "skipped"
+
+            if ok:
+                _log_event(settings, "INFO", "An Bring übertragen", {
+                    "itemId": item_id,
+                    "name": name,
+                    "note": note,
+                })
+            else:
+                _log_event(settings, "ERROR", "Bring-Übertragung fehlgeschlagen", {
+                    "itemId": item_id,
+                    "name": name,
+                })
+
+            payload = {
+                "status": status,
+                "name": name,
+                "note": note,
+                "mealie": mealie_state,
+                "itemId": item_id,
+            }
+            _log_item(settings, payload)
+            results.append(payload)
+
+        return results
