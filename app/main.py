@@ -103,7 +103,7 @@ async def dashboard(request: Request):
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Mealie → Bring</title>
         <link rel="stylesheet" href="/static/style.css" />
-        <link rel="icon" href="/static/favicon.ico" />
+        <link rel="icon" type="image/png" href="/static/Mealie2Bring.png" />
       </head>
       <body>
         <main class="container">
