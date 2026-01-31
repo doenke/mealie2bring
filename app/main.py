@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -16,6 +17,19 @@ app.state.scheduler = create_scheduler()
 
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+def _format_timestamp(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    localized = parsed.astimezone()
+    return localized.strftime("%d.%m.%Y %H:%M")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -41,7 +55,7 @@ async def dashboard(request: Request):
             continue
         rows.append(
             f"<tr>"
-            f"<td>{entry.get('timestamp','')}</td>"
+            f"<td>{_format_timestamp(entry.get('timestamp',''))}</td>"
             f"<td>{entry.get('name','')}</td>"
             f"<td>{entry.get('quantity','')}</td>"
             f"<td>{entry.get('unit','')}</td>"

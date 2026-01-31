@@ -8,7 +8,7 @@ Syncs open items from a Mealie shopping list to Bring! and checks them off in Me
 - Automatic sync on a configurable interval (default: 3 minutes)
 - Log output in the console and in the web UI (max. 30 days)
 - Manual trigger via button and via web service
-- Docker & Docker Compose setup on port 1235
+- Docker & Docker Compose setup on port 1235 (configurable via `PORT`)
 
 ## Quickstart (Docker Compose)
 
@@ -16,7 +16,7 @@ Syncs open items from a Mealie shopping list to Bring! and checks them off in Me
 docker compose up -d --build
 ```
 
-The UI is then available at `http://localhost:1235`.
+The UI is then available at `http://localhost:1235` (or `http://localhost:$PORT` if you override the port).
 
 ## Configuration
 
