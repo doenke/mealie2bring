@@ -4,6 +4,8 @@ Syncs open items from a Mealie shopping list to Bring! and checks them off in Me
 - Mealie is an Open-Source-Recepie-Manager, that can create shopping lists from recepies: https://github.com/mealie-recipes/mealie
 - Bring! is a shopping list app with good family sharing capabilities and a smooth UI: https://www.getbring.com/
 
+It preserves the quantities and units properly during the transfer to Bring.
+
 ## Features
 
 - Fully configurable via environment variables
