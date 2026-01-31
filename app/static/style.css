@@ -24,6 +24,19 @@ body {
   margin-bottom: 32px;
 }
 
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: contain;
+  background: #0f131a;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 .actions {
   display: flex;
   flex-direction: column;
