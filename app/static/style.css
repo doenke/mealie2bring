@@ -93,6 +93,18 @@ body {
   color: #9aa8bd;
 }
 
+.status-meta {
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+  color: #9aa8bd;
+  font-size: 14px;
+}
+
+.meta-line {
+  margin: 0;
+}
+
 h1 {
   margin: 0;
   font-size: 32px;
