@@ -69,6 +69,17 @@ body {
   gap: 8px;
 }
 
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.actions-logo {
+  width: 48px;
+  height: 48px;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.2em;
