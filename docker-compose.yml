@@ -1,6 +1,6 @@
 services:
   mealie2bring:
-    build: .
+    build: https://github.com/doenke/mealie2bring.git#main
     container_name: mealie2bring
     ports:
       - "1235:1235"
@@ -18,6 +18,12 @@ services:
     volumes:
       - mealie2bring-data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:1235/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   mealie2bring-data:
