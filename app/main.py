@@ -15,7 +15,7 @@ from .sync import load_log_entries, sync_mealie_to_bring
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-app = FastAPI(title="Mealie → Bring Sync")
+app = FastAPI(title="Mealie2Bring")
 app.state.scheduler = create_scheduler()
 
 static_dir = Path(__file__).resolve().parent / "static"
