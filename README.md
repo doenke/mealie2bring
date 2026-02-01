@@ -8,8 +8,7 @@ It preserves the quantities and units properly during the transfer to Bring.
 
 
 ## Quickstart (Docker Compose)
-
-This compose is just a quickie... Find a full example in the repo:  [`docker-compose.yml`](./docker-compose.yml)
+Just get started with this compose. It contains everything you need to get going...
 
 ```yaml
 services:
@@ -17,20 +16,18 @@ services:
     build: https://github.com/doenke/mealie2bring.git#main
     container_name: mealie2bring
     ports:
-      - "${PORT:-1235}:${PORT:-1235}"
+      - "1235:1235"
     environment:
       MEALIE_BASE_URL: "https://mealie.example.com"
       MEALIE_API_TOKEN: "your-mealie-token"
       MEALIE_SHOPPING_LIST_ID: "your-shopping-list-id"
       BRING_EMAIL: "you@example.com"
       BRING_PASSWORD: "your-bring-password"
-      PROXY_HEADERS: "true"
-      FORWARDED_ALLOW_IPS: "*"
     restart: unless-stopped
-
 ```
+Find a full example in the repo:  [`docker-compose.yml`](./docker-compose.yml)
 
-The UI is then available at `http://localhost:1235`.
+The UI is then available at `http://localhost:1235`. By default it is configured to run behind any reverse proxy.
 
 ## Configuration
 
