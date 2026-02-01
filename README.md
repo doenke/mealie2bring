@@ -1,5 +1,6 @@
-# mealie2bring
+![mealie2bring Logo](./app/static/Mealie2Bring.png)
 
+# mealie2bring
 Syncs open items from a Mealie shopping list to Bring! and checks them off in Mealie. The web UI shows the log and provides a manual trigger next to a periodic poll.
 - Mealie is an Open-Source-Recepie-Manager, that can create shopping lists from recepies: https://github.com/mealie-recipes/mealie
 - Bring! is a shopping list app with good family sharing capabilities and a smooth UI: https://www.getbring.com/
