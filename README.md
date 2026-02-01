@@ -30,6 +30,11 @@ Find a full example in the repo:  [`docker-compose.yml`](./docker-compose.yml)
 
 The UI is then available at `http://localhost:1235`. By default it is configured to run behind any reverse proxy.
 
+## Finding your Mealie token and shopping list ID
+
+1. In Mealie, go to **Settings → API Tokens** and create a new token (or copy an existing one). Use that value for `MEALIE_API_TOKEN`.
+2. Open the shopping list you want to sync in your browser. Copy the list ID from the URL and use it for `MEALIE_SHOPPING_LIST_ID` (example: `http://mealie.example.com/shopping-lists/5b43c28e-6f86-4c1f-9ad2-3c02f9d63c30`).
+
 ## Configuration
 
 | Variable | Description | Default |
