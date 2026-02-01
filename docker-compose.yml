@@ -2,10 +2,6 @@ services:
   mealie2bring:
     build: https://github.com/doenke/mealie2bring.git#main
     container_name: mealie2bring
-    command: >
-      uvicorn app.main:app
-      --host 0.0.0.0 --port ${PORT:-1235}
-      --proxy-headers --forwarded-allow-ips="*"
     ports:
       - "${PORT:-1235}:${PORT:-1235}"
     environment:
@@ -19,6 +15,8 @@ services:
       LOG_RETENTION_DAYS: "30"
       LOG_PATH: "/data/mealie_bring_sync.log"
       PORT: "${PORT:-1235}"
+      PROXY_HEADERS: "true"
+      FORWARDED_ALLOW_IPS: "*"
       DASHBOARD_LOGO_URL: ""
     volumes:
       - mealie2bring-data:/data

@@ -14,9 +14,11 @@ RUN apt-get update \
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY app /app/app
+COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 
 RUN mkdir -p /data
+RUN chmod +x /app/docker/entrypoint.sh
 
 EXPOSE ${PORT}
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen(f\"http://localhost:{os.environ.get('PORT', '1235')}/health\", timeout=4)"]
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "exec /app/docker/entrypoint.sh"]

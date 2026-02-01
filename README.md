@@ -16,10 +16,6 @@ services:
   mealie2bring:
     build: https://github.com/doenke/mealie2bring.git#main
     container_name: mealie2bring
-    command: >
-      uvicorn app.main:app
-      --host 0.0.0.0 --port ${PORT:-1235}
-      --proxy-headers --forwarded-allow-ips="*"
     ports:
       - "${PORT:-1235}:${PORT:-1235}"
     environment:
@@ -28,6 +24,8 @@ services:
       MEALIE_SHOPPING_LIST_ID: "your-shopping-list-id"
       BRING_EMAIL: "you@example.com"
       BRING_PASSWORD: "your-bring-password"
+      PROXY_HEADERS: "true"
+      FORWARDED_ALLOW_IPS: "*"
     restart: unless-stopped
 
 ```
@@ -48,6 +46,8 @@ The UI is then available at `http://localhost:1235`.
 | `LOG_RETENTION_DAYS` | Log retention in days | `30` |
 | `LOG_PATH` | Path to the log file | `/data/mealie_bring_sync.log` |
 | `PORT` | Web server port | `1235` |
+| `PROXY_HEADERS` | Enable uvicorn proxy headers (set to `false` to disable) | `true` |
+| `FORWARDED_ALLOW_IPS` | Allowed IPs for proxy headers (uvicorn forwarded allow list) | `*` |
 | `DASHBOARD_LOGO_URL` | Optional: URL for a logo shown in the dashboard header | empty |
 | `UI_LOCALE` | Optional: Force UI locale (e.g. `de`, `en`, `de-DE`) | empty |
 | `DASHBOARD_LOCALE` | Default locale used when none matches | `de` |
