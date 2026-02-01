@@ -1,18 +1,10 @@
 # mealie2bring
 
-Syncs open items from a Mealie shopping list to Bring! and checks them off in Mealie. The web UI shows the log and provides a manual trigger.
+Syncs open items from a Mealie shopping list to Bring! and checks them off in Mealie. The web UI shows the log and provides a manual trigger next to a periodic poll.
 - Mealie is an Open-Source-Recepie-Manager, that can create shopping lists from recepies: https://github.com/mealie-recipes/mealie
 - Bring! is a shopping list app with good family sharing capabilities and a smooth UI: https://www.getbring.com/
 
 It preserves the quantities and units properly during the transfer to Bring.
-
-## Features
-
-- Fully configurable via environment variables
-- Retains units and quantities
-- Automatic sync on a configurable interval (default: 3 minutes)
-- Log output in the console and in the web UI (max. 30 days)
-- Manual trigger via button and via web service
 
 
 ## Quickstart (Docker Compose)
