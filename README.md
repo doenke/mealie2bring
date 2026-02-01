@@ -32,7 +32,7 @@ services:
 
 ```
 
-The UI is then available at `http://localhost:1235` (or `http://localhost:$PORT` if you override the port).
+The UI is then available at `http://localhost:1235`.
 
 ## Configuration
 
